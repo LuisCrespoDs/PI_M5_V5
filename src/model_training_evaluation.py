@@ -1,5 +1,6 @@
 import pandas as pd
 from pathlib import Path
+import joblib
 
 from sklearn.pipeline import Pipeline
 from sklearn.linear_model import LogisticRegression
@@ -52,6 +53,7 @@ def build_model(model, preprocessor):
 def train_and_evaluate_models():
     """
     Entrena y evalúa diferentes modelos supervisados de clasificación.
+    Guarda el mejor modelo según F1-score.
     """
 
     X_train, X_test, y_train, y_test, preprocessor = get_train_test_data()
@@ -67,6 +69,7 @@ def train_and_evaluate_models():
     }
 
     results = []
+    trained_pipelines = {}
 
     for model_name, model in models.items():
         print("=" * 80)
@@ -81,6 +84,8 @@ def train_and_evaluate_models():
         summary = summarize_classification(model_name, y_test, y_pred)
         results.append(summary)
 
+        trained_pipelines[model_name] = pipeline
+
         print("\nReporte de clasificación:")
         print(classification_report(y_test, y_pred, zero_division=0))
 
@@ -93,8 +98,19 @@ def train_and_evaluate_models():
     print("\nResumen comparativo de modelos:")
     print(results_df)
 
-    best_model = results_df.iloc[0]["modelo"]
-    print(f"\nMejor modelo según F1-score: {best_model}")
+    best_model_name = results_df.iloc[0]["modelo"]
+    best_pipeline = trained_pipelines[best_model_name]
+
+    print(f"\nMejor modelo según F1-score: {best_model_name}")
+
+    project_path = Path(__file__).resolve().parent.parent
+    models_path = project_path / "models"
+    models_path.mkdir(exist_ok=True)
+
+    model_file = models_path / "best_model.joblib"
+    joblib.dump(best_pipeline, model_file)
+
+    print(f"Modelo guardado correctamente en: {model_file}")
 
     return results_df
 
